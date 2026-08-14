@@ -19,7 +19,7 @@ public enum HTTPMethod: String {
 
 public final class APIManager {
     private let networkingClient: NetworkingClient
-    private let errorHandler: any ErrorHandling
+    private let errorHandler: any APIErrorHandling
     private let authenticator: any APIAuthenticator
     
     private let unauthenticatedSubject = PassthroughSubject<Void, Never>()
@@ -30,7 +30,7 @@ public final class APIManager {
     
     public init(
         networkingClient: NetworkingClient,
-        errorHandler: any ErrorHandling,
+        errorHandler: any APIErrorHandling,
         authenticator: any APIAuthenticator
     ) {
         self.networkingClient = networkingClient
