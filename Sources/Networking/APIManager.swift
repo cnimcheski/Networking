@@ -21,6 +21,7 @@ public final class APIManager {
     private let networkingClient: NetworkingClient
     private let errorHandler: any APIErrorHandling
     private let authenticator: any APIAuthenticator
+    private let logger: any NetworkLogging
     
     private let unauthenticatedSubject = PassthroughSubject<Void, Never>()
     
@@ -31,11 +32,13 @@ public final class APIManager {
     public init(
         networkingClient: NetworkingClient,
         errorHandler: any APIErrorHandling,
-        authenticator: any APIAuthenticator
+        authenticator: any APIAuthenticator,
+        logger: any NetworkLogging
     ) {
         self.networkingClient = networkingClient
         self.errorHandler = errorHandler
         self.authenticator = authenticator
+        self.logger = logger
     }
     
     public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async -> T? where E.EndpointError == Never {
@@ -88,7 +91,7 @@ private extension APIManager {
             }
             throw URLError(.userAuthenticationRequired)
         } catch let error as DecodingError {
-//            Debug.log("endpoint: \(endpoint)\n\ndecoding error", category: .network)
+            logger.log("endpoint: \(endpoint)\n\ndecoding error")
             throw error
         } catch {
             throw error
@@ -109,7 +112,7 @@ private extension APIManager {
             }
             throw URLError(.userAuthenticationRequired)
         } catch let error as DecodingError {
-//            Debug.log("endpoint: \(endpoint)\n\ndecoding error", category: .network)
+            logger.log("endpoint: \(endpoint)\n\ndecoding error")
             throw error
         } catch {
             throw error
