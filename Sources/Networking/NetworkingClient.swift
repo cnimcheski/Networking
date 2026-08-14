@@ -12,7 +12,7 @@ import Foundation
 public final class NetworkingClient {
     public init() {}
     
-    func send<T: Decodable, E: Endpoint>(
+    public func send<T: Decodable, E: Endpoint>(
         request: URLRequest,
         for endpoint: E
     ) async throws -> T where E.EndpointError == Never {
@@ -23,7 +23,7 @@ public final class NetworkingClient {
         return try endpoint.jsonDecoder().decode(T.self, from: data)
     }
     
-    func send<T: Decodable, E: Endpoint>(
+    public func send<T: Decodable, E: Endpoint>(
         request: URLRequest,
         for endpoint: E
     ) async throws -> T where E.EndpointError: EndpointErrorType {

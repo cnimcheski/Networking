@@ -38,7 +38,7 @@ public final class APIManager {
         self.authenticator = authenticator
     }
     
-    func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async -> T? where E.EndpointError == Never {
+    public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async -> T? where E.EndpointError == Never {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
@@ -53,7 +53,7 @@ public final class APIManager {
         return nil
     }
     
-    func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(E.EndpointError) -> T? where E.EndpointError: EndpointErrorType {
+    public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(E.EndpointError) -> T? where E.EndpointError: EndpointErrorType {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
