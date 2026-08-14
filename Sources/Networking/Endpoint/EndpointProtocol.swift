@@ -11,7 +11,6 @@ public protocol Endpoint {
     associatedtype EndpointError = Never
     var path: String { get }
     var queryParameters: [String: String] { get }
-    var baseURL: URL { get }
     var body: Encodable? { get }
     var method: HTTPMethod { get }
     var dateDecodingFormat: DateFormat? { get }
@@ -19,21 +18,13 @@ public protocol Endpoint {
     var shouldHandleGlobalErrors: Bool { get }
 }
 
-// MARK: - Private Default Implementations
-
-private extension Endpoint {
-    var fullURL: URL? {
-        baseURL.appendingPath(path, query: queryParameters)
-    }
-}
-
-// MARK: - Public Default Implementations
+// MARK: - Default Implementations
 
 public extension Endpoint {
     var shouldHandleGlobalErrors: Bool { true }
     
-    func urlRequest() throws -> URLRequest {
-        guard let fullURL else { throw URLError(.badURL) }
+    func urlRequest(using baseURL: URL) throws -> URLRequest {
+        guard let fullURL = baseURL.appendingPath(path, query: queryParameters) else { throw URLError(.badURL) }
         var request = URLRequest(url: fullURL)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

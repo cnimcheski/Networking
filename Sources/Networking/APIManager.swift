@@ -18,6 +18,7 @@ public enum HTTPMethod: String {
 }
 
 public final class APIManager {
+    private let baseURL: URL
     private let networkingClient: NetworkingClient
     private let errorHandler: any APIErrorHandling
     private let authenticator: any APIAuthenticator
@@ -30,11 +31,13 @@ public final class APIManager {
     }
     
     public init(
+        baseURL: URL,
         networkingClient: NetworkingClient,
         errorHandler: any APIErrorHandling,
         authenticator: any APIAuthenticator,
         logger: any NetworkLogging
     ) {
+        self.baseURL = baseURL
         self.networkingClient = networkingClient
         self.errorHandler = errorHandler
         self.authenticator = authenticator
@@ -144,7 +147,7 @@ private extension APIManager {
 
 private extension APIManager {
     func buildRequest<E: Endpoint>(for endpoint: E) async throws -> URLRequest {
-        var request = try endpoint.urlRequest()
+        var request = try endpoint.urlRequest(using: baseURL)
         if endpoint.requiresAuth {
             try await addAuthorization(to: &request)
         }
