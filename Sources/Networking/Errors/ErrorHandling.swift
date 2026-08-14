@@ -7,8 +7,7 @@
 
 /// Allows apps to provide an action for how global API errors (Internet/Server) should be handled.
 /// Ex: Toasts or Alerts.
-@MainActor
 public protocol ErrorHandling: Sendable {
-    func handleGlobalConnectionError<E: Endpoint>(for endpoint: E) async
-    func handleGlobalServerError<E: Endpoint>(for endpoint: E) async
+    @MainActor func handleGlobalConnectionError<E: Endpoint>(for endpoint: E) async
+    @MainActor func handleGlobalServerError<E: Endpoint>(for endpoint: E) async
 }
