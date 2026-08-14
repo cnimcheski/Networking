@@ -23,8 +23,8 @@ public protocol Endpoint {
 public extension Endpoint {
     var shouldHandleGlobalErrors: Bool { true }
     
-    func urlRequest(using baseURL: URL) throws -> URLRequest {
-        guard let fullURL = baseURL.appendingPath(path, query: queryParameters) else { throw URLError(.badURL) }
+    func urlRequest(using baseURL: URL?) throws -> URLRequest {
+        guard let fullURL = baseURL?.appendingPath(path, query: queryParameters) else { throw URLError(.badURL) }
         var request = URLRequest(url: fullURL)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

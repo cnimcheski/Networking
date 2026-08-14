@@ -18,7 +18,7 @@ public enum HTTPMethod: String {
 }
 
 public final class APIManager {
-    private let baseURL: URL
+    private let baseURL: URL?
     private let networkingClient: NetworkingClient
     private let errorHandler: any APIErrorHandling
     private let authenticator: any APIAuthenticator
@@ -31,7 +31,7 @@ public final class APIManager {
     }
     
     public init(
-        baseURL: URL,
+        baseURL: URL?,
         networkingClient: NetworkingClient,
         errorHandler: any APIErrorHandling,
         authenticator: any APIAuthenticator,
