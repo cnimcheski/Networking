@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol Endpoint: Sendable {
+public protocol Endpoint {
     associatedtype EndpointError = Never
     var path: String { get }
     var queryParameters: [String: String] { get }

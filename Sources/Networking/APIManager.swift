@@ -44,11 +44,11 @@ public final class APIManager {
         } catch URLError.userAuthenticationRequired {
             await handleAuthorizationError()
         } catch URLError.notConnectedToInternet {
-            await errorHandler.handleGlobalConnectionError(for: endpoint)
+            await handleConnectionError(for: endpoint)
         } catch is CancellationError, URLError.cancelled {
             /// Cancellation errors are silently ignored
         } catch {
-            await errorHandler.handleGlobalServerError(for: endpoint)
+            await handleServerError(for: endpoint)
         }
         return nil
     }
@@ -59,13 +59,13 @@ public final class APIManager {
         } catch URLError.userAuthenticationRequired {
             await handleAuthorizationError()
         } catch URLError.notConnectedToInternet {
-            await errorHandler.handleGlobalConnectionError(for: endpoint)
+            await handleConnectionError(for: endpoint)
         } catch let error as E.EndpointError {
             throw error
         } catch is CancellationError, URLError.cancelled {
             /// Cancellation errors are silently ignored
         } catch {
-            await errorHandler.handleGlobalServerError(for: endpoint)
+            await handleServerError(for: endpoint)
         }
         return nil
     }
@@ -122,6 +122,18 @@ private extension APIManager {
 private extension APIManager {
     func handleAuthorizationError() async {
         unauthenticatedSubject.send()
+    }
+    
+    func handleConnectionError<E: Endpoint>(for endpoint: E) async {
+        if endpoint.shouldHandleGlobalErrors {
+            await errorHandler.handleGlobalConnectionError()
+        }
+    }
+    
+    func handleServerError<E: Endpoint>(for endpoint: E) async {
+        if endpoint.shouldHandleGlobalErrors {
+            await errorHandler.handleGlobalServerError()
+        }
     }
 }
 
