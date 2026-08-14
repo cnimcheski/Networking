@@ -10,6 +10,8 @@ import Foundation
 /// Makes the raw network calls and handles all global and endpoint specific errors by passing them up to the caller
 /// Throws authentication errors up to the caller as well
 public final class NetworkingClient {
+    public init() {}
+    
     func send<T: Decodable, E: Endpoint>(
         request: URLRequest,
         for endpoint: E
