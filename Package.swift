@@ -22,6 +22,7 @@ let package = Package(
             name: "Networking",
             swiftSettings: [
                 .defaultIsolation(nil)
+                .enableUpcomingFeature("NonisolatedNonsendingByDefault")
             ]
         ),
     ]
