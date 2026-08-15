@@ -8,7 +8,7 @@
 import Foundation
 
 /// Allows apps to provide an action for how global API errors should be handled.
-/// Ex: Toasts or Alerts.
+/// Ex: Toasts/Alerts.
 public protocol APIErrorHandling<APIGlobalError> {
     associatedtype APIGlobalError: APIError
     
