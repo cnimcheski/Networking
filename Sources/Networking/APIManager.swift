@@ -17,9 +17,9 @@ public enum HTTPMethod: String {
     case delete = "DELETE"
 }
 
-public final class APIManager<APIGlobalError: APIError> {
+public final class APIManager<APIGlobalError> {
     private let baseURL: URL?
-    private let networkingClient: NetworkingClient<APIGlobalError>
+    private let networkingClient: NetworkingClient
     private let errorHandler: any APIErrorHandling<APIGlobalError>
     private let authenticator: any APIAuthenticator
     private let logger: any NetworkLogging
@@ -32,7 +32,7 @@ public final class APIManager<APIGlobalError: APIError> {
     
     public init(
         baseURL: URL?,
-        networkingClient: NetworkingClient<APIGlobalError>,
+        networkingClient: NetworkingClient,
         errorHandler: any APIErrorHandling<APIGlobalError>,
         authenticator: any APIAuthenticator,
         logger: any NetworkLogging
