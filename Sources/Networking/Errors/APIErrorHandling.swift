@@ -7,13 +7,44 @@
 
 import Foundation
 
-/// Allows apps to provide an action for how global API errors (Internet/Server) should be handled.
+/// Allows apps to provide an action for how global API errors should be handled.
 /// Ex: Toasts or Alerts.
 public protocol APIErrorHandling<APIGlobalError>: Sendable {
     associatedtype APIGlobalError: APIError
-    @MainActor func handleAPIGlobalError(_ error: APIGlobalError)
-    @MainActor func handleGlobalConnectionError()
-    @MainActor func handleGlobalServerError()
+    
+    /// Handles an API-level error and optionally retries the failed request.
+    ///
+    /// Conforming types can use this method to provide custom handling for each API-level error. The retry closure
+    /// can be invoked to re-execute the original request when appropriate.
+    ///
+    /// - Parameters:
+    ///   - error: The `APIGlobalError` type so that conforming types can run an action for each different error.
+    ///   - retry: A closure that re-executes the failed API request. Can be ignored if not needed.
+    /// - Returns: The response from a successful retry, or `nil` if the error was handled without producing a response.
+    func handleAPIGlobalError<T: Decodable>(
+        _ error: APIGlobalError,
+        retry: @escaping () async throws -> T
+    ) async throws -> T?
+    
+    /// Handles a connection error and optionally retries the failed request.
+    ///  
+    /// The retry closure can be invoked to re-execute the original request when appropriate.
+    ///  
+    /// - Parameter retry: A closure that re-executes the failed API request. Can be ignored if not needed.
+    /// - Returns: The response from a successful retry, or `nil` if the error was handled without producing a response.
+    func handleGlobalConnectionError<T: Decodable>(
+        retry: @escaping () async throws -> T
+    ) async throws -> T?
+    
+    /// Handles a server error (any 400 to 599 status code error) and optionally retries the failed request.
+    ///
+    /// The retry closure can be invoked to re-execute the original request when appropriate.
+    ///
+    /// - Parameter retry: A closure that re-executes the failed API request. Can be ignored if not needed.
+    /// - Returns: The response from a successful retry, or `nil` if the error was handled without producing a response.
+    func handleGlobalServerError<T: Decodable>(
+        retry: @escaping () async throws -> T
+    ) async throws -> T?
 }
 
 // MARK: - APIError Conformance

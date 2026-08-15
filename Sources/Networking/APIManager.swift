@@ -17,7 +17,7 @@ public enum HTTPMethod: String {
     case delete = "DELETE"
 }
 
-public final class APIManager<APIGlobalError> {
+public final class APIManager<APIGlobalError: APIError> {
     private let baseURL: URL?
     private let networkingClient: NetworkingClient
     private let errorHandler: any APIErrorHandling<APIGlobalError>
@@ -49,14 +49,14 @@ public final class APIManager<APIGlobalError> {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
             await handleAuthorizationError()
+        } catch is APIGlobalError {
+            /// APIGlobalError's that weren't successfully retried are silently ignored.
         } catch URLError.notConnectedToInternet {
-            await handleConnectionError(for: endpoint)
-        } catch let error as APIGlobalError {
-            await errorHandler.handleAPIGlobalError(error)
+            /// Connection errors that weren't successfully retried are silently ignored.
         } catch is CancellationError, URLError.cancelled {
             /// Cancellation errors are silently ignored
         } catch {
-            await handleServerError(for: endpoint)
+            /// Server errors that weren't successfully retried are silently ignored.
         }
         return nil
     }
@@ -66,16 +66,18 @@ public final class APIManager<APIGlobalError> {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
             await handleAuthorizationError()
+            //        } catch URLError.notConnectedToInternet {
+            //            await handleConnectionError(for: endpoint)
+        } catch is APIGlobalError {
+            /// APIGlobalError's that weren't successfully retried are silently ignored.
         } catch URLError.notConnectedToInternet {
-            await handleConnectionError(for: endpoint)
-        } catch let error as APIGlobalError {
-            await errorHandler.handleAPIGlobalError(error)
+            /// Connection errors that weren't successfully retried are silently ignored.
         } catch let error as E.EndpointError {
             throw error
         } catch is CancellationError, URLError.cancelled {
-            /// Cancellation errors are silently ignored
+            /// Cancellation errors are silently ignored.
         } catch {
-            await handleServerError(for: endpoint)
+            /// Server errors that weren't successfully retried are silently ignored.
         }
         return nil
     }
@@ -91,6 +93,10 @@ private extension APIManager {
         let request = try await buildRequest(for: endpoint)
         do {
             return try await networkingClient.send(request: request, for: endpoint)
+        } catch let error as APIGlobalError {
+            return try await handleAPIError(error, for: endpoint)
+        } catch URLError.notConnectedToInternet {
+            return try await handleConnectionError(for: endpoint)
         } catch URLError.userAuthenticationRequired {
             if allowRetry {
                 try await authenticator.refreshAccessToken()
@@ -101,7 +107,7 @@ private extension APIManager {
             logger.log("endpoint: \(endpoint)\n\ndecoding error")
             throw error
         } catch {
-            throw error
+            return try await handleServerError(error, for: endpoint)
         }
     }
     
@@ -112,6 +118,10 @@ private extension APIManager {
         let request = try await buildRequest(for: endpoint)
         do {
             return try await networkingClient.send(request: request, for: endpoint)
+        } catch let error as APIGlobalError {
+            return try await handleAPIError(error, for: endpoint)
+        } catch URLError.notConnectedToInternet {
+            return try await handleConnectionError(for: endpoint)
         } catch URLError.userAuthenticationRequired {
             if allowRetry {
                 try await authenticator.refreshAccessToken()
@@ -122,28 +132,106 @@ private extension APIManager {
             logger.log("endpoint: \(endpoint)\n\ndecoding error")
             throw error
         } catch {
-            throw error
+            return try await handleServerError(error, for: endpoint)
         }
     }
 }
 
-// MARK: - Error Handling
+// MARK: - Authorization Error Handling
 
 private extension APIManager {
     func handleAuthorizationError() async {
         unauthenticatedSubject.send()
     }
-    
-    func handleConnectionError<E: Endpoint>(for endpoint: E) async {
-        if endpoint.shouldHandleGlobalErrors {
-            await errorHandler.handleGlobalConnectionError()
-        }
+}
+
+// MARK: - Global Error Handling
+
+private extension APIManager {
+    func handleAPIError<E: Endpoint, T: Decodable>(
+        _ error: APIGlobalError,
+        for endpoint: E
+    ) async throws -> T where E.EndpointError == Never {
+        guard endpoint.shouldHandleGlobalErrors else { throw error }
+        guard let response: T = try await errorHandler.handleAPIGlobalError(
+            error,
+            retry: {
+                try await self.makeRequest(for: endpoint, allowRetry: false)
+            }
+        ) else { throw error }
+        return response
     }
     
-    func handleServerError<E: Endpoint>(for endpoint: E) async {
-        if endpoint.shouldHandleGlobalErrors {
-            await errorHandler.handleGlobalServerError()
-        }
+    func handleAPIError<E: Endpoint, T: Decodable>(
+        _ error: APIGlobalError,
+        for endpoint: E
+    ) async throws -> T where E.EndpointError: APIError {
+        guard endpoint.shouldHandleGlobalErrors else { throw error }
+        guard let response: T = try await errorHandler.handleAPIGlobalError(
+            error,
+            retry: {
+                try await self.makeRequest(for: endpoint, allowRetry: false)
+            }
+        ) else { throw error }
+        return response
+    }
+}
+
+// MARK: - Connection Error Handling
+
+private extension APIManager {
+    func handleConnectionError<E: Endpoint, T: Decodable>(
+        for endpoint: E
+    ) async throws -> T where E.EndpointError ==  Never {
+        guard endpoint.shouldHandleGlobalErrors else { throw URLError(.notConnectedToInternet) }
+        guard let response: T = try await errorHandler.handleGlobalConnectionError(
+            retry: {
+                try await self.makeRequest(for: endpoint, allowRetry: false)
+            }
+        ) else { throw URLError(.notConnectedToInternet) }
+        return response
+    }
+    
+    func handleConnectionError<E: Endpoint, T: Decodable>(
+        for endpoint: E
+    ) async throws -> T where E.EndpointError: APIError {
+        guard endpoint.shouldHandleGlobalErrors else { throw URLError(.notConnectedToInternet) }
+        guard let response: T = try await errorHandler.handleGlobalConnectionError(
+            retry: {
+                try await self.makeRequest(for: endpoint, allowRetry: false)
+            }
+        ) else { throw URLError(.notConnectedToInternet) }
+        return response
+    }
+}
+
+// MARK: - Server Error Handling
+
+private extension APIManager {
+    func handleServerError<E: Endpoint, T: Decodable>(
+        _ error: Error,
+        for endpoint: E
+    ) async throws -> T where E.EndpointError == Never {
+        guard endpoint.shouldHandleGlobalErrors else { throw error }
+        guard let response: T = try await errorHandler.handleGlobalServerError(
+            retry: {
+                try await self.makeRequest(for: endpoint, allowRetry: false)
+            }
+        ) else { throw error }
+        return response
+    }
+    
+    func handleServerError<E: Endpoint, T: Decodable>(
+        _ error: Error,
+        for endpoint: E
+    ) async throws -> T where E.EndpointError: APIError {
+        guard endpoint.shouldHandleGlobalErrors else { throw error }
+        guard let response: T = try await errorHandler.handleGlobalServerError(
+            retry: {
+                try await self.makeRequest(for: endpoint, allowRetry: false)
+            }
+        ) else { throw error }
+        return response
     }
 }
 
