@@ -9,7 +9,7 @@ import Foundation
 
 /// Allows apps to provide an action for how global API errors should be handled.
 /// Ex: Toasts or Alerts.
-public protocol APIErrorHandling<APIGlobalError>: Sendable {
+public protocol APIErrorHandling<APIGlobalError> {
     associatedtype APIGlobalError: APIError
     
     /// Handles an API-level error and optionally retries the failed request.
