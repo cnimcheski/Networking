@@ -10,15 +10,15 @@ import Foundation
 /// Allows apps to provide an action for how global API errors (Internet/Server) should be handled.
 /// Ex: Toasts or Alerts.
 public protocol APIErrorHandling<APIGlobalError>: Sendable {
-    associatedtype APIGlobalError: APIError = Never
+    associatedtype APIGlobalError = Never
     @MainActor func handleAPIGlobalError(_ error: APIGlobalError)
     @MainActor func handleGlobalConnectionError() async
     @MainActor func handleGlobalServerError() async
 }
 
-// MARK: - Default Implementation
+// MARK: - APIError Conformance
 
-extension APIErrorHandling {
+extension APIErrorHandling where APIGlobalError: APIError {
     func parseError(from urlResponse: URLResponse, with data: Data) throws {
         guard let httpResponse = urlResponse as? HTTPURLResponse else { return }
         for error in APIGlobalError.allCases {
