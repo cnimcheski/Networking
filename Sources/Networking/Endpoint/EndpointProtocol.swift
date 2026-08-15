@@ -45,9 +45,9 @@ public extension Endpoint {
     }
 }
 
-// MARK: - EndpointErrorType Conformance
+// MARK: - APIError Conformance
 
-extension Endpoint where EndpointError: EndpointErrorType {
+extension Endpoint where EndpointError: APIError {
     func parseError(from urlResponse: URLResponse, with data: Data) throws {
         guard let httpResponse = urlResponse as? HTTPURLResponse else { return }
         for error in EndpointError.allCases {

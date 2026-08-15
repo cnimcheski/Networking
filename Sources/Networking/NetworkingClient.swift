@@ -9,10 +9,12 @@ import Foundation
 
 /// Makes the raw network calls and handles all global and endpoint specific errors by passing them up to the caller
 /// Throws authentication errors up to the caller as well
-public final class NetworkingClient {
+public final class NetworkingClient<APIGlobalError: APIError> {
+    private let errorHandler: any APIErrorHandling<APIGlobalError>
     private let logger: any NetworkLogging
     
-    public init(logger: any NetworkLogging) {
+    public init(errorHandler: any APIErrorHandling<APIGlobalError>, logger: any NetworkLogging) {
+        self.errorHandler = errorHandler
         self.logger = logger
     }
     
@@ -22,6 +24,7 @@ public final class NetworkingClient {
     ) async throws -> T where E.EndpointError == Never {
         let (data, response) = try await URLSession.shared.data(for: request)
         logger.log("endpoint: \(endpoint)\n\nresponse: \(response)")
+        try errorHandler.parseError(from: response, with: data)
         try response.checkForServerError()
         try response.checkAuthStatus()
         return try endpoint.jsonDecoder().decode(T.self, from: data)
@@ -30,9 +33,10 @@ public final class NetworkingClient {
     public func send<T: Decodable, E: Endpoint>(
         request: URLRequest,
         for endpoint: E
-    ) async throws -> T where E.EndpointError: EndpointErrorType {
+    ) async throws -> T where E.EndpointError: APIError {
         let (data, response) = try await URLSession.shared.data(for: request)
         logger.log("endpoint: \(endpoint)\n\nresponse: \(response)")
+        try errorHandler.parseError(from: response, with: data)
         try endpoint.parseError(from: response, with: data)
         try response.checkForServerError()
         try response.checkAuthStatus()

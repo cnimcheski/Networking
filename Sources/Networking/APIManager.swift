@@ -17,10 +17,10 @@ public enum HTTPMethod: String {
     case delete = "DELETE"
 }
 
-public final class APIManager {
+public final class APIManager<APIGlobalError: APIError> {
     private let baseURL: URL?
-    private let networkingClient: NetworkingClient
-    private let errorHandler: any APIErrorHandling
+    private let networkingClient: NetworkingClient<APIGlobalError>
+    private let errorHandler: any APIErrorHandling<APIGlobalError>
     private let authenticator: any APIAuthenticator
     private let logger: any NetworkLogging
     
@@ -32,8 +32,8 @@ public final class APIManager {
     
     public init(
         baseURL: URL?,
-        networkingClient: NetworkingClient,
-        errorHandler: any APIErrorHandling,
+        networkingClient: NetworkingClient<APIGlobalError>,
+        errorHandler: any APIErrorHandling<APIGlobalError>,
         authenticator: any APIAuthenticator,
         logger: any NetworkLogging
     ) {
@@ -51,6 +51,8 @@ public final class APIManager {
             await handleAuthorizationError()
         } catch URLError.notConnectedToInternet {
             await handleConnectionError(for: endpoint)
+        } catch let error as APIGlobalError {
+            await errorHandler.handleAPIGlobalError(error)
         } catch is CancellationError, URLError.cancelled {
             /// Cancellation errors are silently ignored
         } catch {
@@ -59,13 +61,15 @@ public final class APIManager {
         return nil
     }
     
-    public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(E.EndpointError) -> T? where E.EndpointError: EndpointErrorType {
+    public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(E.EndpointError) -> T? where E.EndpointError: APIError {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
             await handleAuthorizationError()
         } catch URLError.notConnectedToInternet {
             await handleConnectionError(for: endpoint)
+        } catch let error as APIGlobalError {
+            await errorHandler.handleAPIGlobalError(error)
         } catch let error as E.EndpointError {
             throw error
         } catch is CancellationError, URLError.cancelled {
@@ -104,7 +108,7 @@ private extension APIManager {
     func makeRequest<T: Decodable, E: Endpoint>(
         for endpoint: E,
         allowRetry: Bool = true
-    ) async throws -> T where E.EndpointError: EndpointErrorType {
+    ) async throws -> T where E.EndpointError: APIError {
         let request = try await buildRequest(for: endpoint)
         do {
             return try await networkingClient.send(request: request, for: endpoint)
