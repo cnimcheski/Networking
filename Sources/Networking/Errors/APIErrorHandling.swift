@@ -21,7 +21,7 @@ public protocol APIErrorHandling<APIGlobalError> {
     ///   - error: The `APIGlobalError` type so that conforming types can run an action for each different error.
     ///   - retry: A closure that re-executes the failed API request. Can be ignored if not needed.
     /// - Returns: The response from a successful retry, or `nil` if the error was handled without producing a response.
-    func handleAPIGlobalError<T>(
+    func handleAPIGlobalError<T: Decodable>(
         _ error: APIGlobalError,
         retry: @escaping () async throws -> T
     ) async throws -> T?
@@ -32,7 +32,7 @@ public protocol APIErrorHandling<APIGlobalError> {
     ///  
     /// - Parameter retry: A closure that re-executes the failed API request. Can be ignored if not needed.
     /// - Returns: The response from a successful retry, or `nil` if the error was handled without producing a response.
-    func handleGlobalConnectionError<T>(
+    func handleGlobalConnectionError<T: Decodable>(
         retry: @escaping () async throws -> T
     ) async throws -> T?
     
@@ -42,7 +42,7 @@ public protocol APIErrorHandling<APIGlobalError> {
     ///
     /// - Parameter retry: A closure that re-executes the failed API request. Can be ignored if not needed.
     /// - Returns: The response from a successful retry, or `nil` if the error was handled without producing a response.
-    func handleGlobalServerError<T>(
+    func handleGlobalServerError<T: Decodable>(
         retry: @escaping () async throws -> T
     ) async throws -> T?
 }
