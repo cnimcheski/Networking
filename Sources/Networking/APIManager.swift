@@ -122,6 +122,8 @@ private extension APIManager {
             return try await handleAPIError(error, for: endpoint)
         } catch URLError.notConnectedToInternet {
             return try await handleConnectionError(for: endpoint)
+        } catch let error as E.EndpointError {
+            throw error
         } catch URLError.userAuthenticationRequired {
             if allowRetry {
                 try await authenticator.refreshAccessToken()
