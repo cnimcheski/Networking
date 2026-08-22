@@ -32,8 +32,7 @@ public extension Endpoint {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let body {
             request.httpBody = try JSONEncoder().encode(body)
-        }
-        if let rawBody {
+        } else if let rawBody {
             request.httpBody = rawBody
         }
         return request
