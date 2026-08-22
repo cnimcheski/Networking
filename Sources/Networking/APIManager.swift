@@ -66,8 +66,6 @@ public final class APIManager<APIGlobalError: APIError> {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
             await handleAuthorizationError()
-            //        } catch URLError.notConnectedToInternet {
-            //            await handleConnectionError(for: endpoint)
         } catch is APIGlobalError {
             /// APIGlobalError's that weren't successfully retried are silently ignored.
         } catch URLError.notConnectedToInternet {
