@@ -5,7 +5,7 @@
 //  Created by Steve Nimcheski on 8/13/26.
 //
 
-public protocol APIAuthenticator: Sendable {
+public protocol APIAuthenticator {
     /// Fetches and returns the current valid accessToken.
     func getAccessToken() async throws -> String
     
