@@ -11,6 +11,7 @@ public protocol Endpoint {
     associatedtype EndpointError = Never
     var path: String { get }
     var queryParameters: [String: String] { get }
+    var headers: [String: String] { get }
     var body: Encodable? { get }
     var rawBody: Data? { get }
     var method: HTTPMethod { get }
@@ -22,6 +23,7 @@ public protocol Endpoint {
 // MARK: - Default Implementations
 
 public extension Endpoint {
+    var headers: [String: String] { ["Content-Type": "application/json"] }
     var rawBody: Data? { nil }
     var shouldHandleGlobalErrors: Bool { true }
     
@@ -29,7 +31,9 @@ public extension Endpoint {
         guard let fullURL = baseURL?.appendingPath(path, query: queryParameters) else { throw URLError(.badURL) }
         var request = URLRequest(url: fullURL)
         request.httpMethod = method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        for (field, value) in headers {
+            request.setValue(value, forHTTPHeaderField: field)
+        }
         if let body {
             request.httpBody = try JSONEncoder().encode(body)
         } else if let rawBody {
