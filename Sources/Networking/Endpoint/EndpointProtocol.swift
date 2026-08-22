@@ -12,6 +12,7 @@ public protocol Endpoint {
     var path: String { get }
     var queryParameters: [String: String] { get }
     var body: Encodable? { get }
+    var rawBody: Data? { get }
     var method: HTTPMethod { get }
     var dateDecodingFormat: DateFormat? { get }
     var requiresAuth: Bool { get }
@@ -21,6 +22,7 @@ public protocol Endpoint {
 // MARK: - Default Implementations
 
 public extension Endpoint {
+    var rawBody: Data? { nil }
     var shouldHandleGlobalErrors: Bool { true }
     
     func urlRequest(using baseURL: URL?) throws -> URLRequest {
@@ -30,6 +32,9 @@ public extension Endpoint {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let body {
             request.httpBody = try JSONEncoder().encode(body)
+        }
+        if let rawBody {
+            request.httpBody = rawBody
         }
         return request
     }
