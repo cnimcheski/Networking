@@ -38,6 +38,7 @@ public final class APIManager<APIGlobalError: APIError> {
         self.logger = logger
     }
     
+    /// Performs the request for the given Endpoint and handles all global errors internally.
     public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async -> T? where E.EndpointError == Never {
         do {
             return try await makeRequest(for: endpoint)
@@ -55,6 +56,7 @@ public final class APIManager<APIGlobalError: APIError> {
         return nil
     }
     
+    /// Performs the request for the given Endpoint and handles all global errors internally.
     public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(E.EndpointError) -> T? where E.EndpointError: APIError {
         do {
             return try await makeRequest(for: endpoint)
@@ -72,6 +74,40 @@ public final class APIManager<APIGlobalError: APIError> {
             /// Server errors that weren't successfully retried are silently ignored.
         }
         return nil
+    }
+    
+    /// Performs the request for the given Endpoint and handles all global errors internally and rethrows them.
+    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws -> T where E.EndpointError == Never {
+        do {
+            return try await makeRequest(for: endpoint)
+        } catch URLError.userAuthenticationRequired {
+            /// Handle and rethrow authorization errors.
+            await errorHandler.handleAuthorizationError()
+            throw URLError(.userAuthenticationRequired)
+        } catch is CancellationError, URLError.cancelled {
+            /// Rethrow a specific cancellation error.
+            throw CancellationError()
+        } catch {
+            /// Rethrow all other errors.
+            throw error
+        }
+    }
+    
+    /// Performs the request for the given Endpoint and handles all global errors internally and rethrows them.
+    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws -> T where E.EndpointError: APIError {
+        do {
+            return try await makeRequest(for: endpoint)
+        } catch URLError.userAuthenticationRequired {
+            /// Handle and rethrow authorization errors.
+            await errorHandler.handleAuthorizationError()
+            throw URLError(.userAuthenticationRequired)
+        } catch is CancellationError, URLError.cancelled {
+            /// Rethrow a specific cancellation error.
+            throw CancellationError()
+        } catch {
+            /// Rethrow all other errors.
+            throw error
+        }
     }
 }
 
