@@ -12,6 +12,12 @@ import Foundation
 public protocol APIErrorHandling<APIGlobalError> {
     associatedtype APIGlobalError: APIError
     
+    /// Handles an authorization error.
+    ///
+    /// Conforming types can use this method to perform any necessary authorization recovery, such as refreshing credentials or
+    /// prompting the user to sign in again.
+    func handleAuthorizationError() async
+    
     /// Handles an API-level error and optionally retries the failed request.
     ///
     /// Conforming types can use this method to provide custom handling for each API-level error. The retry closure

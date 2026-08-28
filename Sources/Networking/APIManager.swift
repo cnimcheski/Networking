@@ -24,12 +24,6 @@ public final class APIManager<APIGlobalError: APIError> {
     private let authenticator: any APIAuthenticator
     private let logger: any NetworkLogging
     
-    private let unauthenticatedSubject = PassthroughSubject<Void, Never>()
-    
-    public var unauthenticatedPublisher: AnyPublisher<Void, Never> {
-        unauthenticatedSubject.eraseToAnyPublisher()
-    }
-    
     public init(
         baseURL: URL?,
         networkingClient: NetworkingClient,
@@ -48,7 +42,7 @@ public final class APIManager<APIGlobalError: APIError> {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
-            await handleAuthorizationError()
+            await errorHandler.handleAuthorizationError()
         } catch is APIGlobalError {
             /// APIGlobalError's that weren't successfully retried are silently ignored.
         } catch URLError.notConnectedToInternet {
@@ -65,7 +59,7 @@ public final class APIManager<APIGlobalError: APIError> {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
-            await handleAuthorizationError()
+            await errorHandler.handleAuthorizationError()
         } catch is APIGlobalError {
             /// APIGlobalError's that weren't successfully retried are silently ignored.
         } catch URLError.notConnectedToInternet {
@@ -136,15 +130,6 @@ private extension APIManager {
         }
     }
 }
-
-// MARK: - Authorization Error Handling
-
-private extension APIManager {
-    func handleAuthorizationError() async {
-        unauthenticatedSubject.send()
-    }
-}
-
 // MARK: - Global Error Handling
 
 private extension APIManager {
