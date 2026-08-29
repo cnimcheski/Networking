@@ -6,9 +6,9 @@
 //
 
 /// Defines all the errors the API Manager can throw.
-public enum APIManagerError<APIGlobalError: APIError>: Error {
+public enum APIManagerError: Error {
     case cancellation
-    case custom(APIGlobalError)
+    case custom(any APIError)
     case endpoint(any APIError)
     case network
     case server
