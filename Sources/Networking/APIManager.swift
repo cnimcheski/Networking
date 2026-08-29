@@ -77,7 +77,7 @@ public final class APIManager<APIGlobalError: APIError> {
     }
     
     /// Performs the request for the given Endpoint, handles all global errors internally, and rethrows them.
-    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError) -> T where E.EndpointError == Never {
+    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError<APIGlobalError>) -> T where E.EndpointError == Never {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
@@ -95,7 +95,7 @@ public final class APIManager<APIGlobalError: APIError> {
     }
     
     /// Performs the request for the given Endpoint, handles all global errors internally, and rethrows them.
-    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError) -> T where E.EndpointError: APIError {
+    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError<APIGlobalError>) -> T where E.EndpointError: APIError {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
@@ -274,19 +274,5 @@ private extension APIManager {
     func addAuthorization(to request: inout URLRequest) async throws {
         let accessToken = try await authenticator.getAccessToken()
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-    }
-}
-
-// MARK: - APIManagerError
-
-public extension APIManager {
-    /// Defines all the errors the API Manager can throw.
-    enum APIManagerError: Error {
-        case cancellation
-        case custom(APIGlobalError)
-        case endpoint(any APIError)
-        case network
-        case server
-        case unauthorized
     }
 }
