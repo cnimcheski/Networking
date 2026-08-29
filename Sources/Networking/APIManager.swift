@@ -76,37 +76,41 @@ public final class APIManager<APIGlobalError: APIError> {
         return nil
     }
     
-    /// Performs the request for the given Endpoint and handles all global errors internally and rethrows them.
-    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws -> T where E.EndpointError == Never {
+    /// Performs the request for the given Endpoint, handles all global errors internally, and rethrows them.
+    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError) -> T where E.EndpointError == Never {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
-            /// Handle and rethrow authorization errors.
             await errorHandler.handleAuthorizationError()
-            throw URLError(.userAuthenticationRequired)
+            throw .unauthorized
+        } catch let error as APIGlobalError {
+            throw .custom(error)
+        } catch URLError.notConnectedToInternet {
+            throw .network
         } catch is CancellationError, URLError.cancelled {
-            /// Rethrow a specific cancellation error.
-            throw CancellationError()
+            throw .cancellation
         } catch {
-            /// Rethrow all other errors.
-            throw error
+            throw .server
         }
     }
     
-    /// Performs the request for the given Endpoint and handles all global errors internally and rethrows them.
-    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws -> T where E.EndpointError: APIError {
+    /// Performs the request for the given Endpoint, handles all global errors internally, and rethrows them.
+    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError) -> T where E.EndpointError: APIError {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
-            /// Handle and rethrow authorization errors.
             await errorHandler.handleAuthorizationError()
-            throw URLError(.userAuthenticationRequired)
+            throw .unauthorized
+        } catch let error as APIGlobalError {
+            throw .custom(error)
+        } catch URLError.notConnectedToInternet {
+            throw .network
+        } catch let error as E.EndpointError {
+            throw .endpoint(error)
         } catch is CancellationError, URLError.cancelled {
-            /// Rethrow a specific cancellation error.
-            throw CancellationError()
+            throw .cancellation
         } catch {
-            /// Rethrow all other errors.
-            throw error
+            throw .server
         }
     }
 }
@@ -270,5 +274,19 @@ private extension APIManager {
     func addAuthorization(to request: inout URLRequest) async throws {
         let accessToken = try await authenticator.getAccessToken()
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+    }
+}
+
+// MARK: - APIManagerError
+
+public extension APIManager {
+    /// Defines all the errors the API Manager can throw.
+    enum APIManagerError: Error {
+        case cancellation
+        case custom(APIGlobalError)
+        case endpoint(any APIError)
+        case network
+        case server
+        case unauthorized
     }
 }
