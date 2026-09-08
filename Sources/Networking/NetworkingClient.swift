@@ -27,6 +27,7 @@ public final class NetworkingClient {
         try errorHandler.parseError(from: response, with: data)
         try response.checkForServerError()
         try response.checkAuthStatus()
+        if let data = data as? T { return data }
         return try endpoint.jsonDecoder().decode(T.self, from: data)
     }
     
@@ -40,6 +41,7 @@ public final class NetworkingClient {
         try endpoint.parseError(from: response, with: data)
         try response.checkForServerError()
         try response.checkAuthStatus()
+        if let data = data as? T { return data }
         return try endpoint.jsonDecoder().decode(T.self, from: data)
     }
 }
