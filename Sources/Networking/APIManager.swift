@@ -37,9 +37,13 @@ public final class APIManager<APIGlobalError: APIError> {
         self.authenticator = authenticator
         self.logger = logger
     }
-    
+}
+
+// MARK: - Public performRequest methods
+
+public extension APIManager {
     /// Performs the request for the given Endpoint and handles all global errors internally.
-    public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async -> T? where E.EndpointError == Never {
+    func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async -> T? where E.EndpointError == Never {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
@@ -57,7 +61,7 @@ public final class APIManager<APIGlobalError: APIError> {
     }
     
     /// Performs the request for the given Endpoint and handles all global errors internally.
-    public func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(E.EndpointError) -> T? where E.EndpointError: APIError {
+    func performRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(E.EndpointError) -> T? where E.EndpointError: APIError {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
@@ -75,9 +79,13 @@ public final class APIManager<APIGlobalError: APIError> {
         }
         return nil
     }
-    
+}
+
+// MARK: - Public performThrowingRequest Methods
+
+public extension APIManager {
     /// Performs the request for the given Endpoint, handles all global errors internally, and rethrows them.
-    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError) -> T where E.EndpointError == Never {
+    func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError) -> T where E.EndpointError == Never {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
@@ -95,7 +103,7 @@ public final class APIManager<APIGlobalError: APIError> {
     }
     
     /// Performs the request for the given Endpoint, handles all global errors internally, and rethrows them.
-    public func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError) -> T where E.EndpointError: APIError {
+    func performThrowingRequest<T: Decodable, E: Endpoint>(for endpoint: E) async throws(APIManagerError) -> T where E.EndpointError: APIError {
         do {
             return try await makeRequest(for: endpoint)
         } catch URLError.userAuthenticationRequired {
