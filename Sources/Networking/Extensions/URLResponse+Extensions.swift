@@ -19,4 +19,9 @@ extension URLResponse {
         guard let httpResponse = self as? HTTPURLResponse, httpResponse.statusCode == 401 else { return }
         throw URLError(.userAuthenticationRequired)
     }
+    
+    func checkForNoContent<T: Decodable>(for type: T.Type) -> T? {
+        guard let httpResponse = self as? HTTPURLResponse, httpResponse.statusCode == 204 else { return nil }
+        return EmptyResponse() as? T
+    }
 }
